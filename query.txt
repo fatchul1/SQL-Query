@@ -1,0 +1,413 @@
+BEGIN;
+
+
+CREATE TABLE IF NOT EXISTS public.customers_dataset
+(
+    customer_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    customer_unique_id character varying(50) COLLATE pg_catalog."default",
+    customer_zip_code_prefix character varying(10) COLLATE pg_catalog."default",
+    customer_city character varying(50) COLLATE pg_catalog."default",
+    customer_state character varying(10) COLLATE pg_catalog."default",
+    CONSTRAINT customers_dataset_pkey PRIMARY KEY (customer_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.geolocations_dataset
+(
+    geolocation_zip_code_prefix character varying(25) COLLATE pg_catalog."default",
+    geolocation_lat real,
+    geolocation_lng real,
+    geolocation_city character varying(50) COLLATE pg_catalog."default",
+    geolocation_state character varying(50) COLLATE pg_catalog."default"
+);
+
+CREATE TABLE IF NOT EXISTS public.order_items_dataset
+(
+    order_id character varying(50) COLLATE pg_catalog."default",
+    order_item_id character varying(50) COLLATE pg_catalog."default",
+    product_id character varying(50) COLLATE pg_catalog."default",
+    seller_id character varying(50) COLLATE pg_catalog."default",
+    shipping_limit_date timestamp(6) with time zone,
+    price numeric(50, 0),
+    freight_value numeric(50, 0)
+);
+
+CREATE TABLE IF NOT EXISTS public.orders_dataset
+(
+    order_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    customer_id character varying(50) COLLATE pg_catalog."default",
+    order_status character varying(50) COLLATE pg_catalog."default",
+    order_purchase_timestamp timestamp(6) with time zone,
+    order_approved_at timestamp(6) with time zone,
+    order_delivered_carrier_date timestamp(6) with time zone,
+    order_delivered_customer_date timestamp(6) with time zone,
+    order_estimated_delivery_date timestamp(6) with time zone,
+    CONSTRAINT orders_dataset_pkey PRIMARY KEY (order_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.payments_dataset
+(
+    order_id character varying(40) COLLATE pg_catalog."default",
+    payment_sequential integer,
+    payment_type character varying(30) COLLATE pg_catalog."default",
+    payment_installments integer,
+    payment_value double precision
+);
+
+CREATE TABLE IF NOT EXISTS public.products_dataset
+(
+    index character varying(5) COLLATE pg_catalog."default",
+    product_id character varying(40) COLLATE pg_catalog."default" NOT NULL,
+    product_category_name character varying(70) COLLATE pg_catalog."default",
+    product_name_lenght numeric,
+    product_description_lenght numeric,
+    product_photos_qty numeric,
+    product_weight_g numeric,
+    product_length_cm numeric,
+    product_height_cm numeric,
+    product_width_cm numeric,
+    CONSTRAINT products_dataset_pkey PRIMARY KEY (product_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.reviews_dataset
+(
+    review_id character varying(50) COLLATE pg_catalog."default",
+    order_id character varying(50) COLLATE pg_catalog."default",
+    review_score integer,
+    review_comment_title character varying(50) COLLATE pg_catalog."default",
+    review_comment_message character varying(300) COLLATE pg_catalog."default",
+    review_creation_date timestamp(6) with time zone,
+    review_answer_timestamp timestamp(6) with time zone
+);
+
+CREATE TABLE IF NOT EXISTS public.sellers_dataset
+(
+    seller_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    seller_zip_code_prefix character varying(50) COLLATE pg_catalog."default",
+    seller_city character varying(50) COLLATE pg_catalog."default",
+    seller_state character varying(50) COLLATE pg_catalog."default",
+    CONSTRAINT sellers_dataset_pkey PRIMARY KEY (seller_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.geolocations_dataset_sellers_dataset
+(
+    geolocations_dataset_geolocation_zip_code_prefix character varying(25) COLLATE pg_catalog."default",
+    sellers_dataset_seller_zip_code_prefix character varying(50) COLLATE pg_catalog."default"
+);
+
+CREATE TABLE IF NOT EXISTS public.geolocations_dataset_customers_dataset
+(
+    geolocations_dataset_geolocation_zip_code_prefix character varying(25) COLLATE pg_catalog."default",
+    customers_dataset_customer_zip_code_prefix character varying(10) COLLATE pg_catalog."default"
+);
+
+ALTER TABLE IF EXISTS public.customers_dataset
+    ADD FOREIGN KEY (customer_id)
+    REFERENCES public.orders_dataset (customer_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.orders_dataset
+    ADD FOREIGN KEY (order_id)
+    REFERENCES public.reviews_dataset (order_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.orders_dataset
+    ADD FOREIGN KEY (order_id)
+    REFERENCES public.order_items_dataset (order_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.orders_dataset
+    ADD FOREIGN KEY (order_id)
+    REFERENCES public.payments_dataset (order_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.products_dataset
+    ADD FOREIGN KEY (product_id)
+    REFERENCES public.order_items_dataset (product_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.sellers_dataset
+    ADD FOREIGN KEY (seller_id)
+    REFERENCES public.order_items_dataset (seller_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.geolocations_dataset_sellers_dataset
+    ADD FOREIGN KEY (geolocations_dataset_geolocation_zip_code_prefix)
+    REFERENCES public.geolocations_dataset (geolocation_zip_code_prefix) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.geolocations_dataset_sellers_dataset
+    ADD FOREIGN KEY (sellers_dataset_seller_zip_code_prefix)
+    REFERENCES public.sellers_dataset (seller_zip_code_prefix) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.geolocations_dataset_customers_dataset
+    ADD FOREIGN KEY (geolocations_dataset_geolocation_zip_code_prefix)
+    REFERENCES public.geolocations_dataset (geolocation_zip_code_prefix) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+
+ALTER TABLE IF EXISTS public.geolocations_dataset_customers_dataset
+    ADD FOREIGN KEY (customers_dataset_customer_zip_code_prefix)
+    REFERENCES public.customers_dataset (customer_zip_code_prefix) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+
+END;
+
+—--------------------------------------Tugas 2—------------------------------------------------------------------------------
+#Nomor 1
+Create table coba1 as (
+select customer_id,date_part ('Month',order_purchase_timestamp) as month, 
+date_part ('Year',order_purchase_timestamp) as year
+From orders_dataset);
+
+create table coba2 as(
+select count (distinct customer_id) as jumlah_pelanggan, 
+month, year
+from coba1
+group by month, year);
+
+select year, avg (jumlah_pelanggan) as avg_monthly_year
+from coba2
+group by year
+order by year
+
+# Nomor 2
+
+create table total_customer_unik as (select cd.customer_unique_id, date_part('Year',od.order_purchase_timestamp) as year
+from customers_dataset as cd
+join orders_dataset as od on cd.customer_id = od.customer_id);
+
+select year, count (distinct customer_unique_id) as new_customer
+from total_customer_unik
+group by year
+
+# Nomor 3
+create table total_customer_ro as (select cd.customer_unique_id, date_part('Year',od.order_purchase_timestamp) as year
+from customers_dataset as cd
+join orders_dataset as od on cd.customer_id = od.customer_id);
+
+create table total_customer_ro2 as(select customer_unique_id, year, count (customer_unique_id) as jumlah_order
+from total_customer_ro
+group by customer_unique_id, year);
+
+create table total_customer_ro3 as(select year, jumlah_order, customer_unique_id, count (customer_unique_id) as repeat_order
+from total_customer_ro2
+where jumlah_order != 1
+group by customer_unique_id, year, jumlah_order);
+
+select year, count (repeat_order) as total_ro
+from total_customer_ro3
+group by year
+order by year
+
+# Nomor 4
+
+create table total_customer_ro as (select cd.customer_unique_id, date_part('Year',od.order_purchase_timestamp) as year
+from customers_dataset as cd
+join orders_dataset as od on cd.customer_id = od.customer_id);
+
+create table total_customer_ro2 as(select customer_unique_id, year, count (customer_unique_id) as jumlah_order
+from total_customer_ro
+group by customer_unique_id, year);
+
+select year, avg (jumlah_order)as rerata_order_pertahun
+from total_customer_ro2
+group by year
+order by year
+
+#Nomorl 5
+create table jawaban1_2 as (select j1.year, j1.avg_monthly_year, j2.new_customer
+from jawaban1 as j1
+join jawaban2 as j2 on j1.year=j2.year);
+
+
+create table jawaban1_2_3 as (
+select j12.year, j12.avg_monthly_year, j12.new_customer, j3.total_ro
+from jawaban1_2 as j12
+join jawaban3 as j3 on j12.year=j3.year);
+
+create table jawaban1_2_3_4 as(
+select j123.year, j123.avg_monthly_year, j123.new_customer, j123.total_ro, j4.rerata_order_pertahun
+from jawaban1_2_3 as j123
+join jawaban4 as j4 on j123.year=j4.year);
+
+create table bisnis_metrik AS
+(select *
+from jawaban1_2_3_4)
+
+—------------------------------------Tugas 3—--------------------------------------------------------------------------
+# No 1
+create table revenue_terpisah as (select oid.order_id, oid.price, oid.freight_value, od.order_status, od.order_delivered_carrier_date as time
+from order_items_dataset as oid
+join orders_dataset as od on oid.order_id=od.order_id);
+
+create table revenue_gabung as(
+select date_part ('Year', time) as year, price+freight_value as total_revenue 
+from revenue_terpisah
+where order_status = 'delivered');
+
+create table total_revenue_tahunan as (select year, sum(total_revenue)
+from revenue_gabung
+where not year is null
+group by year
+order by year)
+
+
+# No 2
+create table canceled_order as (select order_status, date_part('Year',order_purchase_timestamp) as year
+from orders_dataset
+where order_status = 'canceled');
+
+create_table count_canceled_tahunan as (select year, count(order_status) as count_canceled
+from canceled_order
+group by year
+order by year)
+
+# No 3
+create table revenue_tahunan as (select oid.order_id, oid.product_id, oid.price + oid.freight_value as revenue, 
+od.order_status, date_part ('Year',od.order_delivered_customer_date) as year
+from order_items_dataset as oid
+join orders_dataset as od on oid.order_id = od.order_id);
+
+create table revenue_produk as (select pd.product_category_name, rt.revenue, rt.year
+from revenue_tahunan as rt
+join products_dataset as pd on rt.product_id = pd.product_id);
+
+create table rank_category as (select product_category_name, sum(revenue) as revenue_total, year, 
+rank () over(partition by year order by sum(revenue) desc) as rank_category
+from revenue_produk
+where year is not null
+group by product_category_name, year
+order by rank_category);
+
+create table produk_revenue_terbesar as (select year, product_category_name
+from rank_category
+where rank_category = 1
+order by year)
+
+# No 4
+create table if not exists product_cancel as (select oid.order_id, oid.product_id, 
+od.order_status, date_part ('Year',od.order_purchase_timestamp) as year
+from order_items_dataset as oid
+join orders_dataset as od on oid.order_id = od.order_id
+where od.order_status = 'canceled');
+
+create table if not exists product_cancel2 as (select pd.product_category_name, pc.order_status, pc.year
+from product_cancel as pc
+join products_dataset as pd on pc.product_id = pd.product_id);
+
+
+create table if not exists rank_category_cancel as (select product_category_name, count(order_status) as count_cancel, year, 
+rank () over(partition by year order by count(order_status)  desc) as rank_category
+from product_cancel2
+where year is not null
+group by product_category_name, year
+order by rank_category);
+
+create table product_cancel_terbesar as (select  year, product_category_name
+from rank_category_cancel
+where rank_category = 1
+order by year);
+
+# No 5
+create table if not exists revenue_canceled as (select trt.year, trt.total_revenue_yearly, cct.count_canceled
+from total_revenue_tahunan as trt
+join count_canceled_tahunan as cct on trt.year=cct.year);
+
+
+create table if not exists revenue_terbesar_canceled as (
+select rc.year, rc.total_revenue_yearly, rc.count_canceled, prt.revenue_terbesar
+from revenue_canceled as rc
+join produk_revenue_terbesar as prt on rc.year=prt.year);
+
+create table if not exists revenue_canceled_terbesar as(
+select rtc.year, rtc.total_revenue_yearly, rtc.count_canceled, rtc.revenue_terbesar, pct.product_category_name as cancel_terbesar
+from revenue_terbesar_canceled as rtc
+join product_cancel_terbesar as pct on rtc.year=pct.year);
+
+create table jawabanfix as (select *
+from revenue_canceled_terbesar);
+
+select *
+from jawabanfix
+
+
+—----------------------------------------------------Tugas 4—----------------------------------------------------------
+#no 1
+
+select payment_type, count (payment_type) as count_of_payment
+from payments_dataset
+group by payment_type
+order by count (payment_type) desc
+
+#no 2
+create table if not exists payment_type_annual as (select od.order_id, date_part ('Year', od.order_purchase_timestamp) as year, pd.payment_type
+from orders_dataset as od
+join payments_dataset as pd on od.order_id=pd.order_id);
+
+create table boleto_table as (select year, count (payment_type) as boleto
+from payment_type_annual
+where payment_type = 'boleto'
+group by year
+order by year);
+
+create table credit_card_table as (select year, count (payment_type) as credit_card
+from payment_type_annual
+where payment_type = 'credit_card'
+group by year
+order by year);
+
+create table voucher_table as (select year, count (payment_type) as voucher
+from payment_type_annual
+where payment_type = 'voucher'
+group by year
+order by year);
+
+create table debit_card as (select year, count (payment_type) as debit_card
+from payment_type_annual
+where payment_type = 'debit_card'
+group by year
+order by year);
+
+create table boleto_credit_table as (select bt.year, bt.boleto, cct.credit_card
+from boleto_table as bt
+join credit_card_table as cct on bt.year=cct.year);
+
+create table boletocredit_voucher as (select bct.year, bct.boleto, bct.credit_card, vt.voucher
+from boleto_credit_table as bct
+join voucher_table as vt on bct.year=vt.year);
+
+create table payment_method_all as (select bv.year, bv.boleto, bv.credit_card, bv.voucher, dc.debit_card
+from boletocredit_voucher as bv
+join debit_card as dc on bv.year=dc.year);
+
+select*
+from payment_method_all
